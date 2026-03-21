@@ -1,0 +1,50 @@
+{
+  "type": "function",
+  "function": {
+    "name": "create_calendar_event",
+    "description": "Creates a real Google Calendar event after the user confirms their meeting details.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's name"
+        },
+        "meetingTitle": {
+          "type": "string",
+          "description": "The meeting title"
+        },
+        "startISO": {
+          "type": "string",
+          "description": "Meeting start time in ISO-8601 format"
+        },
+        "endISO": {
+          "type": "string",
+          "description": "Meeting end time in ISO-8601 format"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone string such as America/New_York"
+        }
+      },
+      "required": ["name", "meetingTitle", "startISO", "endISO", "timezone"]
+    }
+  },
+  "server": {
+    "url": "https://YOUR-BACKEND-URL/vapi/webhook"
+  },
+  "messages": [
+    {
+      "type": "request-start",
+      "content": "Got it. Let me schedule that now."
+    },
+    {
+      "type": "request-complete",
+      "content": "Your meeting has been scheduled."
+    },
+    {
+      "type": "request-failed",
+      "content": "I couldn't schedule that meeting right now."
+    }
+  ]
+}
