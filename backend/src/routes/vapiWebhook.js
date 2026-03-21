@@ -12,6 +12,22 @@ function buildResult(toolCallId, result) {
   };
 }
 
+function getToolCalls(message) {
+  return message?.toolCalls || message?.toolCallList || [];
+}
+
+function parseArguments(rawArgs) {
+  if (!rawArgs) return {};
+  if (typeof rawArgs === 'string') {
+    try {
+      return JSON.parse(rawArgs);
+    } catch (error) {
+      throw new Error('Tool arguments are not valid JSON');
+    }
+  }
+  return rawArgs;
+}
+
 router.post('/webhook', async (req, res) => {
   try {
     const message = req.body?.message;
@@ -23,21 +39,25 @@ router.post('/webhook', async (req, res) => {
       });
     }
 
-    const toolCalls = message.toolCallList || [];
+    const toolCalls = getToolCalls(message);
     const results = [];
 
     for (const toolCall of toolCalls) {
-      if (toolCall.name !== 'create_calendar_event') {
+      const toolName = toolCall?.function?.name || toolCall?.name;
+      const args = parseArguments(
+        toolCall?.function?.arguments ?? toolCall?.arguments
+      );
+
+      if (toolName !== 'create_calendar_event') {
         results.push(
           buildResult(toolCall.id, {
             success: false,
-            error: `Unsupported tool: ${toolCall.name}`
+            error: `Unsupported tool: ${toolName}`
           })
         );
         continue;
       }
 
-      const args = toolCall.arguments || {};
       const name = args.name || 'Guest';
       const meetingTitle = args.meetingTitle || `Meeting with ${name}`;
       const startISO = args.startISO;
@@ -64,11 +84,11 @@ router.post('/webhook', async (req, res) => {
       );
     }
 
-    return res.json({ results });
+    return res.status(200).json({ results });
   } catch (error) {
     console.error('Vapi webhook error:', error);
 
-    const toolCalls = req.body?.message?.toolCallList || [];
+    const toolCalls = getToolCalls(req.body?.message || {});
     const results = toolCalls.map((toolCall) =>
       buildResult(toolCall.id, {
         success: false,
